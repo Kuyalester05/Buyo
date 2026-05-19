@@ -43,4 +43,21 @@ void main() {
     expect(find.text('Leaf Spot Early'), findsOneWidget);
     expect(find.text('95.2%'), findsWidgets);
   });
+
+  testWidgets('Settings tab opens application settings', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const BuyoApp());
+
+    await tester.tap(find.text('Get Started'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Settings'), findsWidgets);
+    expect(find.text('Dark Mode'), findsOneWidget);
+    expect(find.text('About Application'), findsOneWidget);
+    expect(find.text('About Piper Betle'), findsOneWidget);
+    expect(find.textContaining('Image-Based Classification'), findsOneWidget);
+  });
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/theme/app_theme_colors.dart';
+
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
 
   static const _darkTeal = Color(0xFF078F78);
-  static const _screenBackground = Color(0xFFE5FBF5);
-  static const _cardBorder = Color(0xFFCFCFCF);
 
   @override
   State<HistoryPage> createState() => _HistoryPageState();
@@ -34,8 +34,10 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+
     return ColoredBox(
-      color: HistoryPage._screenBackground,
+      color: colors.alternateBackground,
       child: Column(
         children: [
           _HistoryHeader(
@@ -56,9 +58,9 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
           Expanded(
             child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(46, 22, 46, 24),
+              padding: const EdgeInsets.fromLTRB(30, 24, 30, 24),
               itemCount: _historyScans.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 8),
+              separatorBuilder: (context, index) => const SizedBox(height: 14),
               itemBuilder: (context, index) {
                 return _HistoryScanTile(scan: _historyScans[index]);
               },
@@ -84,12 +86,12 @@ class _HistoryHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 106,
+      height: 118,
       color: HistoryPage._darkTeal,
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(50, 0, 46, 17),
+          padding: const EdgeInsets.fromLTRB(30, 0, 30, 20),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -97,7 +99,7 @@ class _HistoryHeader extends StatelessWidget {
                 'Scan History',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 13,
+                  fontSize: 18,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0,
                 ),
@@ -132,34 +134,38 @@ class _SortControl extends StatelessWidget {
     return Row(
       children: [
         const Text(
-          'Sort by :',
+          'Sort by:',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 9,
-            fontWeight: FontWeight.w500,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
             letterSpacing: 0,
           ),
         ),
-        const SizedBox(width: 5),
+        const SizedBox(width: 7),
         Container(
-          height: 20,
-          width: 82,
-          padding: const EdgeInsets.only(left: 5),
-          color: Colors.white,
+          height: 30,
+          width: 104,
+          padding: const EdgeInsets.only(left: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: selectedSort,
               isDense: true,
+              isExpanded: true,
               icon: const Icon(
                 Icons.arrow_drop_down,
-                size: 14,
+                size: 20,
                 color: Color(0xFF777777),
               ),
               dropdownColor: Colors.white,
               style: const TextStyle(
                 color: Colors.black,
-                fontSize: 6.5,
-                fontWeight: FontWeight.w500,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 0,
               ),
               items: sortOptions.map((sort) {
@@ -189,10 +195,12 @@ class _FilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+
     return ColoredBox(
-      color: Colors.white,
+      color: colors.card,
       child: SizedBox(
-        height: 61,
+        height: 65,
         child: Scrollbar(
           controller: controller,
           thumbVisibility: true,
@@ -202,7 +210,7 @@ class _FilterBar extends StatelessWidget {
           child: ListView.separated(
             controller: controller,
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(46, 9, 46, 27),
+            padding: const EdgeInsets.fromLTRB(30, 12, 30, 19),
             itemCount: filters.length,
             separatorBuilder: (context, index) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
@@ -234,25 +242,27 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(999),
       child: Container(
-        height: 24,
-        constraints: const BoxConstraints(minWidth: 60),
+        height: 34,
+        constraints: const BoxConstraints(minWidth: 76),
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 18),
         decoration: BoxDecoration(
-          color: selected ? HistoryPage._darkTeal : Colors.white,
-          border: Border.all(color: const Color(0xFFD4D4D4)),
+          color: selected ? HistoryPage._darkTeal : colors.card,
+          border: Border.all(color: colors.cardBorder),
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
           label,
           maxLines: 1,
           style: TextStyle(
-            color: selected ? Colors.white : Colors.black,
-            fontSize: 6.5,
+            color: selected ? Colors.white : colors.textPrimary,
+            fontSize: 11,
             fontWeight: FontWeight.w900,
             letterSpacing: 0,
           ),
@@ -269,26 +279,28 @@ class _HistoryScanTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+
     return Container(
-      height: 61,
+      height: 76,
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: HistoryPage._cardBorder),
-        borderRadius: BorderRadius.circular(8),
+        color: colors.card,
+        border: Border.all(color: colors.cardBorder, width: 2),
+        borderRadius: BorderRadius.circular(14),
       ),
-      padding: const EdgeInsets.fromLTRB(14, 12, 18, 12),
+      padding: const EdgeInsets.fromLTRB(18, 14, 20, 14),
       child: Row(
         children: [
           Container(
-            width: 37,
-            height: 37,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               color: scan.accentBackground,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(Icons.eco_outlined, color: scan.accent, size: 17),
+            child: Icon(Icons.eco_outlined, color: scan.accent, size: 26),
           ),
-          const SizedBox(width: 17),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -298,48 +310,50 @@ class _HistoryScanTile extends StatelessWidget {
                   scan.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 8.5,
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 14,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0,
+                    height: 1,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 6),
                 Text(
                   scan.subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 6.5,
-                    fontWeight: FontWeight.w400,
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                     letterSpacing: 0,
+                    height: 1,
                   ),
                 ),
               ],
             ),
           ),
-          const Column(
+          Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 '95.2%',
                 style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 15,
+                  color: colors.textPrimary,
+                  fontSize: 21,
                   fontWeight: FontWeight.w900,
                   height: 1,
                   letterSpacing: 0,
                 ),
               ),
-              SizedBox(height: 3),
+              SizedBox(height: 4),
               Text(
                 'Accuracy',
                 style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 6,
-                  fontWeight: FontWeight.w400,
+                  color: colors.textPrimary,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
                   height: 1,
                   letterSpacing: 0,
                 ),

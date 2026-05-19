@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/app_routes.dart';
+import '../../../shared/theme/app_theme_colors.dart';
 import '../../../shared/widgets/background_rings.dart';
 import '../../../shared/widgets/buyo_leaf_mark.dart';
 
@@ -12,15 +13,26 @@ class LandingPage extends StatelessWidget {
     final size = MediaQuery.sizeOf(context);
     final isWide = size.width > 520;
     final contentWidth = isWide ? 380.0 : size.width * 0.7;
+    final isDark = AppThemeColors.of(context).isDark;
 
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF08CA94), Color(0xFF009E7C), Color(0xFF007C76)],
-            stops: [0.02, 0.56, 1],
+            colors: isDark
+                ? const [
+                    Color(0xFF054F43),
+                    Color(0xFF063B35),
+                    Color(0xFF071C1A),
+                  ]
+                : const [
+                    Color(0xFF08CA94),
+                    Color(0xFF009E7C),
+                    Color(0xFF007C76),
+                  ],
+            stops: const [0.02, 0.56, 1],
           ),
         ),
         child: Stack(

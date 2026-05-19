@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../shared/services/leaf_image_picker.dart';
+import '../../../shared/theme/app_theme_colors.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   static const _teal = Color(0xFF10BC97);
   static const _darkTeal = Color(0xFF07977D);
-  static const _screenBackground = Color(0xFFECF8F4);
-  static const _cardBorder = Color(0xFFE1E1E1);
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -39,8 +38,10 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+
     return ColoredBox(
-      color: HomePage._screenBackground,
+      color: colors.pageBackground,
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -73,10 +74,10 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                   const SizedBox(height: 27),
-                  const Text(
+                  Text(
                     'Recent Scans',
                     style: TextStyle(
-                      color: Color(0xFF171717),
+                      color: colors.textPrimary,
                       fontSize: 19,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 0,
@@ -192,8 +193,10 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+
     return Material(
-      color: Colors.white,
+      color: colors.card,
       borderRadius: BorderRadius.circular(17),
       child: InkWell(
         onTap: onTap,
@@ -201,7 +204,7 @@ class _ActionCard extends StatelessWidget {
         child: Container(
           height: 133,
           decoration: BoxDecoration(
-            border: Border.all(color: HomePage._cardBorder, width: 2),
+            border: Border.all(color: colors.cardBorder, width: 2),
             borderRadius: BorderRadius.circular(17),
           ),
           child: Column(
@@ -221,8 +224,8 @@ class _ActionCard extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF161616),
+                style: TextStyle(
+                  color: colors.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0,
@@ -233,8 +236,8 @@ class _ActionCard extends StatelessWidget {
                 subtitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF777777),
+                style: TextStyle(
+                  color: colors.textSecondary,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0,
@@ -255,11 +258,13 @@ class _RecentScanTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+
     return Container(
       height: 76,
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: HomePage._cardBorder, width: 2),
+        color: colors.card,
+        border: Border.all(color: colors.cardBorder, width: 2),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.fromLTRB(18, 14, 20, 14),
@@ -284,8 +289,8 @@ class _RecentScanTile extends StatelessWidget {
                   scan.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF161616),
+                  style: TextStyle(
+                    color: colors.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0,
@@ -297,8 +302,8 @@ class _RecentScanTile extends StatelessWidget {
                   scan.subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF777777),
+                  style: TextStyle(
+                    color: colors.textSecondary,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0,

@@ -2,10 +2,18 @@ import 'package:flutter/material.dart';
 
 import '../features/history/presentation/history_page.dart';
 import '../features/home/presentation/home_page.dart';
+import '../features/settings/presentation/settings_page.dart';
 import '../shared/widgets/app_bottom_navigation.dart';
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  const MainShell({
+    super.key,
+    required this.themeMode,
+    required this.onThemeModeChanged,
+  });
+
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode> onThemeModeChanged;
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -30,10 +38,13 @@ class _MainShellState extends State<MainShell> {
           Expanded(
             child: IndexedStack(
               index: _activeIndex,
-              children: const [
-                HomePage(),
-                HistoryPage(),
-                _SettingsPlaceholder(),
+              children: [
+                const HomePage(),
+                const HistoryPage(),
+                SettingsPage(
+                  themeMode: widget.themeMode,
+                  onThemeModeChanged: widget.onThemeModeChanged,
+                ),
               ],
             ),
           ),
@@ -45,20 +56,6 @@ class _MainShellState extends State<MainShell> {
             },
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SettingsPlaceholder extends StatelessWidget {
-  const _SettingsPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const ColoredBox(
-      color: Color(0xFFECF8F4),
-      child: Center(
-        child: Icon(Icons.settings_outlined, color: Colors.black, size: 36),
       ),
     );
   }

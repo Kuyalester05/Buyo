@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme_colors.dart';
+
 enum AppTab { home, history, settings }
 
 class AppBottomNavigation extends StatelessWidget {
@@ -9,20 +11,18 @@ class AppBottomNavigation extends StatelessWidget {
     required this.onTabSelected,
   });
 
-  static const _teal = Color(0xFF10BC97);
-  static const _navBackground = Color(0xFFFAFAFA);
-  static const _inactive = Colors.black;
-
   final AppTab activeTab;
   final ValueChanged<AppTab> onTabSelected;
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+
     return Container(
       height: 69,
-      decoration: const BoxDecoration(
-        color: _navBackground,
-        border: Border(top: BorderSide(color: Color(0xFFEAEAEA), width: 2)),
+      decoration: BoxDecoration(
+        color: colors.navBackground,
+        border: Border(top: BorderSide(color: colors.navBorder, width: 2)),
       ),
       child: SafeArea(
         top: false,
@@ -74,9 +74,8 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected
-        ? AppBottomNavigation._teal
-        : AppBottomNavigation._inactive;
+    final colors = AppThemeColors.of(context);
+    final color = isSelected ? colors.teal : colors.navInactive;
 
     return InkWell(
       onTap: onTap,
