@@ -5,10 +5,18 @@ class BuyoLeafMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 98,
-      height: 98,
-      child: CustomPaint(painter: _BuyoLeafMarkPainter()),
+    return SizedBox.square(
+      dimension: 94,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: const Size.square(94),
+            painter: _BuyoLeafMarkPainter(),
+          ),
+          const Icon(Icons.eco_outlined, color: Colors.white, size: 32),
+        ],
+      ),
     );
   }
 }
@@ -20,70 +28,33 @@ class _BuyoLeafMarkPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
-      ..strokeWidth = 3
+      ..strokeWidth = 2.2
       ..color = Colors.white;
 
     final mark = Path()
-      ..moveTo(size.width * 0.98, size.height * 0.02)
-      ..lineTo(size.width * 0.98, size.height * 0.42)
+      ..moveTo(size.width, 0)
+      ..lineTo(size.width, size.height * 0.43)
       ..cubicTo(
-        size.width * 0.98,
-        size.height * 0.74,
-        size.width * 0.73,
-        size.height * 0.98,
+        size.width,
+        size.height * 0.78,
+        size.width * 0.76,
+        size.height,
         size.width * 0.46,
-        size.height * 0.98,
+        size.height,
       )
-      ..lineTo(size.width * 0.08, size.height * 0.98)
-      ..quadraticBezierTo(
-        size.width * 0.02,
-        size.height * 0.98,
-        size.width * 0.02,
-        size.height * 0.92,
-      )
-      ..lineTo(size.width * 0.02, size.height * 0.47)
+      ..lineTo(size.width * 0.05, size.height)
+      ..quadraticBezierTo(0, size.height, 0, size.height * 0.95)
+      ..lineTo(0, size.height * 0.48)
       ..cubicTo(
-        size.width * 0.02,
+        0,
         size.height * 0.19,
-        size.width * 0.22,
-        size.height * 0.02,
+        size.width * 0.2,
+        0,
         size.width * 0.49,
-        size.height * 0.02,
+        0,
       )
-      ..lineTo(size.width * 0.98, size.height * 0.02)
       ..close();
     canvas.drawPath(mark, stroke);
-
-    final leafCenter = Offset(size.width * 0.53, size.height * 0.53);
-    final leafRadius = size.width * 0.15;
-    canvas.drawCircle(leafCenter, leafRadius, stroke);
-
-    final leaf = Path()
-      ..moveTo(size.width * 0.39, size.height * 0.56)
-      ..cubicTo(
-        size.width * 0.46,
-        size.height * 0.43,
-        size.width * 0.58,
-        size.height * 0.39,
-        size.width * 0.67,
-        size.height * 0.44,
-      )
-      ..cubicTo(
-        size.width * 0.63,
-        size.height * 0.58,
-        size.width * 0.51,
-        size.height * 0.65,
-        size.width * 0.39,
-        size.height * 0.56,
-      )
-      ..close();
-    canvas.drawPath(leaf, stroke);
-
-    canvas.drawLine(
-      Offset(size.width * 0.43, size.height * 0.57),
-      Offset(size.width * 0.63, size.height * 0.44),
-      stroke,
-    );
   }
 
   @override

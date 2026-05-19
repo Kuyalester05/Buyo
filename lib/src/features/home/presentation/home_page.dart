@@ -1,78 +1,99 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
-class HomePage extends StatelessWidget {
+import '../../../shared/services/leaf_image_picker.dart';
+
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  static const _teal = Color(0xFF08B88C);
-  static const _darkTeal = Color(0xFF078F78);
-  static const _mintBackground = Color(0xFFE5FBF5);
-  static const _pageBackground = Color(0xFFFDF9F9);
+  static const _teal = Color(0xFF10BC97);
+  static const _darkTeal = Color(0xFF07977D);
+  static const _screenBackground = Color(0xFFECF8F4);
+  static const _cardBorder = Color(0xFFE1E1E1);
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final _leafImagePicker = LeafImagePicker();
+
+  Future<void> _captureLeafImage() async {
+    final image = await _leafImagePicker.captureLeafImage();
+    if (!mounted) return;
+    _showImagePickerResult(image, 'Leaf photo captured.');
+  }
+
+  Future<void> _uploadLeafImage() async {
+    final image = await _leafImagePicker.uploadLeafImage();
+    if (!mounted) return;
+    _showImagePickerResult(image, 'Leaf image selected.');
+  }
+
+  void _showImagePickerResult(XFile? image, String successMessage) {
+    final message = image == null ? 'No image selected.' : successMessage;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _pageBackground,
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
+    return ColoredBox(
+      color: HomePage._screenBackground,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const _HomeHeader(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(30, 24, 30, 0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _HomeHeader(),
-                  ColoredBox(
-                    color: _mintBackground,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(42, 16, 42, 34),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Row(
-                            children: [
-                              Expanded(
-                                child: _ActionCard(
-                                  icon: Icons.camera_alt_outlined,
-                                  title: 'Scan Leaf',
-                                  subtitle: 'Take a photo now',
-                                ),
-                              ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: _ActionCard(
-                                  icon: Icons.upload_outlined,
-                                  title: 'Upload Image',
-                                  subtitle: 'From gallery',
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 60),
-                          const Text(
-                            'Recent Scans',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          ..._recentScans.map(
-                            (scan) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: _RecentScanTile(scan: scan),
-                            ),
-                          ),
-                        ],
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _ActionCard(
+                          icon: Icons.camera_alt_outlined,
+                          title: 'Scan Leaf',
+                          subtitle: 'Take a photo now',
+                          onTap: _captureLeafImage,
+                        ),
                       ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: _ActionCard(
+                          icon: Icons.upload_outlined,
+                          title: 'Upload Image',
+                          subtitle: 'From gallery',
+                          onTap: _uploadLeafImage,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 27),
+                  const Text(
+                    'Recent Scans',
+                    style: TextStyle(
+                      color: Color(0xFF171717),
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  ..._recentScans.map(
+                    (scan) => Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: _RecentScanTile(scan: scan),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          const _BottomNavigation(),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -84,20 +105,72 @@ class _HomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 241,
+      height: 205,
       decoration: const BoxDecoration(
-        color: HomePage._darkTeal,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(44)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF15C89C), HomePage._darkTeal],
+        ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(43)),
       ),
-      alignment: Alignment.bottomLeft,
-      padding: const EdgeInsets.fromLTRB(42, 0, 42, 22),
-      child: const Text(
-        'Good Morning',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 19,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 0,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(44, 27, 44, 31),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text(
+                    'B U Y O',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 3,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.notifications_none_outlined,
+                      color: Colors.white,
+                      size: 25,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              const Text(
+                'Good Morning',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Check your Buyo leaves today',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -109,58 +182,67 @@ class _ActionCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    required this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 102,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFC2C2C2)),
-        borderRadius: BorderRadius.circular(7),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 37,
-            height: 37,
-            decoration: BoxDecoration(
-              color: HomePage._teal.withValues(alpha: 0.32),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: HomePage._darkTeal, size: 15),
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(17),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(17),
+        child: Container(
+          height: 133,
+          decoration: BoxDecoration(
+            border: Border.all(color: HomePage._cardBorder, width: 2),
+            borderRadius: BorderRadius.circular(17),
           ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 9,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0,
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 51,
+                height: 51,
+                decoration: BoxDecoration(
+                  color: HomePage._teal.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: HomePage._darkTeal, size: 24),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFF161616),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0,
+                ),
+              ),
+              const SizedBox(height: 9),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFF777777),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 6.5,
-              fontWeight: FontWeight.w400,
-              letterSpacing: 0,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -174,25 +256,25 @@ class _RecentScanTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 61,
+      height: 76,
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFCFCFCF)),
-        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: HomePage._cardBorder, width: 2),
+        borderRadius: BorderRadius.circular(14),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: const EdgeInsets.fromLTRB(18, 14, 20, 14),
       child: Row(
         children: [
           Container(
-            width: 37,
-            height: 37,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               color: scan.accentBackground,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(Icons.eco_outlined, color: scan.accent, size: 17),
+            child: Icon(Icons.eco_outlined, color: scan.accent, size: 26),
           ),
-          const SizedBox(width: 17),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -203,22 +285,24 @@ class _RecentScanTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 8.5,
+                    color: Color(0xFF161616),
+                    fontSize: 14,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0,
+                    height: 1,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 6),
                 Text(
                   scan.subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 6.5,
-                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF777777),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                     letterSpacing: 0,
+                    height: 1,
                   ),
                 ),
               ],
@@ -239,12 +323,13 @@ class _StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 39,
-      height: 11,
+      height: 26,
+      constraints: const BoxConstraints(minWidth: 58),
       alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: scan.pillBackground,
-        border: Border.all(color: scan.accent, width: 1),
+        border: Border.all(color: scan.accent, width: 2),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -252,41 +337,10 @@ class _StatusPill extends StatelessWidget {
         maxLines: 1,
         style: TextStyle(
           color: scan.accent,
-          fontSize: 4.8,
-          fontWeight: FontWeight.w700,
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
           letterSpacing: 0,
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomNavigation extends StatelessWidget {
-  const _BottomNavigation();
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Container(
-        height: 58,
-        color: HomePage._pageBackground,
-        padding: const EdgeInsets.symmetric(horizontal: 52, vertical: 7),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              width: 83,
-              height: 40,
-              decoration: BoxDecoration(
-                color: HomePage._teal,
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: const Icon(Icons.home_outlined, color: Colors.white),
-            ),
-            const Icon(Icons.history_toggle_off, color: Colors.black, size: 25),
-            const Icon(Icons.settings_outlined, color: Colors.black, size: 25),
-          ],
+          height: 1,
         ),
       ),
     );
@@ -316,40 +370,24 @@ const _recentScans = [
     title: 'Healthy Leaf',
     subtitle: 'Scan #24 - 2 hrs ago',
     status: 'Healthy',
-    accent: Color(0xFF08B85F),
-    accentBackground: Color(0xFFA8F6D6),
-    pillBackground: Color(0xFFDDFBEA),
+    accent: Color(0xFF00BD62),
+    accentBackground: Color(0xFFCFFBE9),
+    pillBackground: Color(0xFFFFFFFF),
   ),
   _ScanItem(
     title: 'Blight - Early',
     subtitle: 'Scan #23 - 4 hrs ago',
     status: 'Early',
-    accent: Color(0xFF9DAE00),
-    accentBackground: Color(0xFFF0FF9F),
-    pillBackground: Color(0xFFF5FFC2),
+    accent: Color(0xFFC2A100),
+    accentBackground: Color(0xFFF7F19B),
+    pillBackground: Color(0xFFFFFFFF),
   ),
   _ScanItem(
     title: 'Leaf Spot - Severe',
     subtitle: 'Scan #20 - Yesterday',
     status: 'Severe',
-    accent: Color(0xFFD81E3A),
-    accentBackground: Color(0xFFFFB9C1),
-    pillBackground: Color(0xFFFFCDD2),
-  ),
-  _ScanItem(
-    title: 'Healthy Leaf',
-    subtitle: 'Scan #15 - 2 Days ago',
-    status: 'Healthy',
-    accent: Color(0xFF08B85F),
-    accentBackground: Color(0xFFA8F6D6),
-    pillBackground: Color(0xFFDDFBEA),
-  ),
-  _ScanItem(
-    title: 'Leaf Spot - Early',
-    subtitle: 'Scan #23 - 3 Days ago',
-    status: 'Early',
-    accent: Color(0xFF9DAE00),
-    accentBackground: Color(0xFFF0FF9F),
-    pillBackground: Color(0xFFF5FFC2),
+    accent: Color(0xFFFF174A),
+    accentBackground: Color(0xFFFFD1DA),
+    pillBackground: Color(0xFFFFFFFF),
   ),
 ];

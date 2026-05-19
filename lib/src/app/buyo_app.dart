@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../features/home/presentation/home_page.dart';
 import '../features/landing/presentation/landing_page.dart';
 import 'app_routes.dart';
+import 'main_shell.dart';
 
 class BuyoApp extends StatelessWidget {
   const BuyoApp({super.key});
@@ -20,7 +20,7 @@ class BuyoApp extends StatelessWidget {
       initialRoute: AppRoutes.landing,
       routes: {
         AppRoutes.landing: (_) => const LandingPage(),
-        AppRoutes.home: (_) => const HomePage(),
+        AppRoutes.home: (_) => const MainShell(),
       },
     );
   }

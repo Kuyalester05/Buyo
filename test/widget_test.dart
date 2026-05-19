@@ -25,4 +25,22 @@ void main() {
     expect(find.text('Upload Image'), findsOneWidget);
     expect(find.text('Recent Scans'), findsOneWidget);
   });
+
+  testWidgets('History tab opens scan history page', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const BuyoApp());
+
+    await tester.tap(find.text('Get Started'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('History'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Scan History'), findsOneWidget);
+    expect(find.text('Recent'), findsOneWidget);
+    expect(find.text('All'), findsOneWidget);
+    expect(find.text('Healthy'), findsOneWidget);
+    expect(find.text('Leaf Spot Early'), findsOneWidget);
+    expect(find.text('95.2%'), findsWidgets);
+  });
 }

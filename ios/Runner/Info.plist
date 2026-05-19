@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Buyo needs camera access so you can capture a leaf image for disease assessment.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Buyo needs photo library access so you can upload a leaf image from your gallery.</string>
 </dict>
 </plist>
