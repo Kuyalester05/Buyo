@@ -1,0 +1,5 @@
+Blight_Early
+Blight_Severe
+Healthy
+LeafSpot_Early
+LeafSpot_Severe
