@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../features/landing/presentation/landing_page.dart';
+import '../features/scan_preview/presentation/scan_preview_page.dart';
 import 'app_routes.dart';
 import 'main_shell.dart';
 
@@ -36,6 +37,19 @@ class _BuyoAppState extends State<BuyoApp> {
       ),
       themeMode: _themeMode,
       initialRoute: AppRoutes.landing,
+      onGenerateRoute: (settings) {
+        if (settings.name == AppRoutes.scanPreview) {
+          final arguments = settings.arguments;
+          if (arguments is ScanPreviewArguments) {
+            return MaterialPageRoute<bool>(
+              builder: (_) => ScanPreviewPage(arguments: arguments),
+              settings: settings,
+            );
+          }
+        }
+
+        return null;
+      },
       routes: {
         AppRoutes.landing: (_) => const LandingPage(),
         AppRoutes.home: (_) => MainShell(

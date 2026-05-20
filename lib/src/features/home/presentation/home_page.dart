@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../shared/services/leaf_image_picker.dart';
 import '../../../shared/theme/app_theme_colors.dart';
+import '../../scan_preview/presentation/scan_preview_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,17 +22,31 @@ class _HomePageState extends State<HomePage> {
   Future<void> _captureLeafImage() async {
     final image = await _leafImagePicker.captureLeafImage();
     if (!mounted) return;
-    _showImagePickerResult(image, 'Leaf photo captured.');
+    await _openScanPreview(image, 'Camera photo');
   }
 
   Future<void> _uploadLeafImage() async {
     final image = await _leafImagePicker.uploadLeafImage();
     if (!mounted) return;
-    _showImagePickerResult(image, 'Leaf image selected.');
+    await _openScanPreview(image, 'Gallery image');
   }
 
-  void _showImagePickerResult(XFile? image, String successMessage) {
-    final message = image == null ? 'No image selected.' : successMessage;
+  Future<void> _openScanPreview(XFile? image, String sourceLabel) async {
+    if (image == null) {
+      _showMessage('No image selected.');
+      return;
+    }
+
+    final shouldContinue = await Navigator.of(context).pushNamed<bool>(
+      AppRoutes.scanPreview,
+      arguments: ScanPreviewArguments(image: image, sourceLabel: sourceLabel),
+    );
+    if (!mounted || shouldContinue != true) return;
+
+    _showMessage('Leaf image ready for scanning.');
+  }
+
+  void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
