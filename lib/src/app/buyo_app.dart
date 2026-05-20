@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../features/analysis/presentation/analysis_result_page.dart';
 import '../features/landing/presentation/landing_page.dart';
 import '../features/scan_preview/presentation/scan_preview_page.dart';
 import 'app_routes.dart';
@@ -43,6 +44,19 @@ class _BuyoAppState extends State<BuyoApp> {
           if (arguments is ScanPreviewArguments) {
             return MaterialPageRoute<bool>(
               builder: (_) => ScanPreviewPage(arguments: arguments),
+              settings: settings,
+            );
+          }
+        }
+
+        if (settings.name == AppRoutes.analysisResult) {
+          final arguments = settings.arguments;
+          if (arguments is AnalysisResultArguments) {
+            return MaterialPageRoute(
+              builder: (_) => AnalysisResultPage(
+                result: arguments.result,
+                imageBytes: arguments.imageBytes,
+              ),
               settings: settings,
             );
           }

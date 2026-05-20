@@ -3,6 +3,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../app/app_routes.dart';
+import '../../../features/analysis/presentation/analysis_result_page.dart';
+import '../../../shared/services/leaf_analysis_service.dart';
 import '../../../shared/theme/app_theme_colors.dart';
 
 class ScanPreviewArguments {
@@ -53,7 +56,7 @@ class _ScanPreviewPageState extends State<ScanPreviewPage> {
                 ),
               ),
             ),
-            const _ContinueBar(),
+            _ContinueBar(image: widget.arguments.image, imageBytes: _imageBytes),
           ],
         ),
       ),
@@ -280,8 +283,52 @@ class _ScanReadinessPanel extends StatelessWidget {
   }
 }
 
-class _ContinueBar extends StatelessWidget {
-  const _ContinueBar();
+class _ContinueBar extends StatefulWidget {
+  const _ContinueBar({required this.image, required this.imageBytes});
+
+  final XFile image;
+  final Future<Uint8List> imageBytes;
+
+  @override
+  State<_ContinueBar> createState() => _ContinueBarState();
+}
+
+class _ContinueBarState extends State<_ContinueBar> {
+  bool _isAnalyzing = false;
+
+  Future<void> _performAnalysis() async {
+    setState(() => _isAnalyzing = true);
+
+    try {
+      final service = LeafAnalysisService();
+      await service.initialize();
+
+      final result = await service.analyzeImage(widget.image.path);
+      final imageBytes = await widget.imageBytes;
+
+      if (!mounted) return;
+
+      await Navigator.of(context).pushNamed<void>(
+        AppRoutes.analysisResult,
+        arguments: AnalysisResultArguments(
+          result: result,
+          imageBytes: imageBytes,
+        ),
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Analysis failed: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isAnalyzing = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -297,12 +344,22 @@ class _ContinueBar extends StatelessWidget {
         width: double.infinity,
         height: 52,
         child: FilledButton.icon(
-          onPressed: () => Navigator.of(context).pop(true),
-          icon: const Icon(Icons.arrow_forward_rounded, size: 21),
-          label: const Text('Continue'),
+          onPressed: _isAnalyzing ? null : _performAnalysis,
+          icon: _isAnalyzing
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Icon(Icons.arrow_forward_rounded, size: 21),
+          label: Text(_isAnalyzing ? 'Analyzing...' : 'Continue'),
           style: FilledButton.styleFrom(
             backgroundColor: colors.darkTeal,
             foregroundColor: Colors.white,
+            disabledBackgroundColor: colors.darkTeal.withValues(alpha: 0.6),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
