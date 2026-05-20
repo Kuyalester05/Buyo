@@ -48,12 +48,13 @@ class LeafAnalysisService {
     );
 
     final input = _preprocessImage(resizedImage);
-    final output = List<double>.filled(_labels!.length, 0.0);
+    final output = List.generate(1, (_) => List<double>.filled(_labels!.length, 0.0));
 
     _interpreter!.run(input, output);
 
-    final maxIndex = output.indexOf(output.reduce((a, b) => a > b ? a : b));
-    final confidence = output[maxIndex];
+    final outputValues = output[0];
+    final maxIndex = outputValues.indexOf(outputValues.reduce((a, b) => a > b ? a : b));
+    final confidence = outputValues[maxIndex];
     final classification = _labels![maxIndex];
 
     return AnalysisResult.fromClassification(
