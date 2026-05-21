@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
@@ -59,6 +60,39 @@ class LeafAnalysisService {
 
     return AnalysisResult.fromClassification(
       imagePath,
+      classification,
+      confidence,
+    );
+  }
+
+  Future<AnalysisResult> analyzeImageBytes(Uint8List imageBytes) async {
+    if (_interpreter == null || _labels == null) {
+      await initialize();
+    }
+
+    final decodedImage = img.decodeImage(imageBytes);
+    if (decodedImage == null) {
+      throw Exception('Failed to decode image');
+    }
+
+    final resizedImage = img.copyResize(
+      decodedImage,
+      width: _inputSize,
+      height: _inputSize,
+    );
+
+    final input = _preprocessImage(resizedImage);
+    final output = List.generate(1, (_) => List<double>.filled(_labels!.length, 0.0));
+
+    _interpreter!.run(input, output);
+
+    final outputValues = output[0];
+    final maxIndex = outputValues.indexOf(outputValues.reduce((a, b) => a > b ? a : b));
+    final confidence = outputValues[maxIndex];
+    final classification = _labels![maxIndex];
+
+    return AnalysisResult.fromClassification(
+      'cropped-image',
       classification,
       confidence,
     );
