@@ -260,12 +260,22 @@ class _CropImagePageState extends State<_CropImagePage> {
   late Offset _cropStart;
   late Offset _cropEnd;
   bool _isCropping = false;
+  late Future<ui.Image> _imageFuture;
+  ui.Image? _decodedImage;
 
   @override
   void initState() {
     super.initState();
     _cropStart = const Offset(0.2, 0.2);
     _cropEnd = const Offset(0.8, 0.8);
+    _imageFuture = _decodeImageForDisplay();
+  }
+
+  Future<ui.Image> _decodeImageForDisplay() async {
+    final codec = await ui.instantiateImageCodec(widget.imageBytes);
+    final frame = await codec.getNextFrame();
+    _decodedImage = frame.image;
+    return frame.image;
   }
 
   void _updateCropArea(Offset newStart, Offset newEnd) {
@@ -316,15 +326,23 @@ class _CropImagePageState extends State<_CropImagePage> {
       body: Column(
         children: [
           Expanded(
-            child: Stack(
-              children: [
-                Image.memory(widget.imageBytes, fit: BoxFit.cover),
-                _CropOverlay(
-                  cropStart: _cropStart,
-                  cropEnd: _cropEnd,
-                  onCropUpdate: _updateCropArea,
-                ),
-              ],
+            child: FutureBuilder<ui.Image>(
+              future: _imageFuture,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return Stack(
+                  children: [
+                    Image.memory(widget.imageBytes, fit: BoxFit.fill),
+                    _CropOverlay(
+                      cropStart: _cropStart,
+                      cropEnd: _cropEnd,
+                      onCropUpdate: _updateCropArea,
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           Padding(
@@ -362,14 +380,16 @@ class _CropImagePageState extends State<_CropImagePage> {
     Offset start,
     Offset end,
   ) async {
+    if (_decodedImage == null) throw Exception('Image not loaded');
+
     final codec = await ui.instantiateImageCodec(imageBytes);
     final frame = await codec.getNextFrame();
     final image = frame.image;
 
-    final width = (image.width * (end.dx - start.dx)).toInt();
-    final height = (image.height * (end.dy - start.dy)).toInt();
     final x = (image.width * start.dx).toInt();
     final y = (image.height * start.dy).toInt();
+    final width = (image.width * (end.dx - start.dx)).toInt();
+    final height = (image.height * (end.dy - start.dy)).toInt();
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
@@ -817,6 +837,9 @@ class _ContinueBarState extends State<_ContinueBar> {
 
       if (!mounted) return;
       Navigator.of(context).pop(true);
+    } on NotABuyoLeafException catch (e) {
+      if (!mounted) return;
+      await _showNotALeafDialog(e.confidence);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -827,6 +850,15 @@ class _ContinueBarState extends State<_ContinueBar> {
         setState(() => _isAnalyzing = false);
       }
     }
+  }
+
+  Future<void> _showNotALeafDialog(double confidence) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _NotALeafBottomSheet(confidence: confidence),
+    );
   }
 
   @override
@@ -870,6 +902,169 @@ class _ContinueBarState extends State<_ContinueBar> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Bottom sheet shown when the image is not recognized as a Buyo leaf.
+class _NotALeafBottomSheet extends StatelessWidget {
+  const _NotALeafBottomSheet({required this.confidence});
+
+  final double confidence;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+    final confidencePct = (confidence * 100).toStringAsFixed(1);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.card,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: colors.cardBorder,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Warning icon
+          Container(
+            width: 68,
+            height: 68,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF5C1A).withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.image_not_supported_outlined,
+              color: Color(0xFFFF5C1A),
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Not a Buyo Leaf',
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'The image you provided does not appear to be a Buyo (Piper betle) leaf. '
+            'Please capture a clear, close-up photo of a single Buyo leaf and try again.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Confidence chip
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: colors.alternateBackground,
+              border: Border.all(color: colors.cardBorder, width: 1.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Match confidence: $confidencePct% (minimum required: 65%)',
+              style: TextStyle(
+                color: colors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Tips
+          _TipRow(
+            icon: Icons.center_focus_strong_outlined,
+            text: 'Hold the camera close to the leaf, filling most of the frame.',
+            colors: colors,
+          ),
+          const SizedBox(height: 10),
+          _TipRow(
+            icon: Icons.wb_sunny_outlined,
+            text: 'Use good lighting — avoid dark or overly bright conditions.',
+            colors: colors,
+          ),
+          const SizedBox(height: 10),
+          _TipRow(
+            icon: Icons.crop_free_outlined,
+            text: 'Crop out unrelated backgrounds using the crop tool.',
+            colors: colors,
+          ),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFF5C1A),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              child: const Text('Try Again'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TipRow extends StatelessWidget {
+  const _TipRow({
+    required this.icon,
+    required this.text,
+    required this.colors,
+  });
+
+  final IconData icon;
+  final String text;
+  final AppThemeColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: colors.darkTeal),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../shared/services/models/saved_scan_model.dart';
+import '../../../shared/services/scan_storage_service.dart';
 import '../../../shared/theme/app_theme_colors.dart';
+import '../../scan_detail/presentation/scan_detail_page.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -23,13 +26,60 @@ class _HistoryPageState extends State<HistoryPage> {
   ];
 
   final _filterScrollController = ScrollController();
+  final _storageService = ScanStorageService();
+  late Future<List<SavedScan>> _scansFuture;
   String _selectedSort = _sortOptions.first;
   String _selectedFilter = _filters.first;
+
+  @override
+  void initState() {
+    super.initState();
+    _scansFuture = _storageService.getAllScans();
+  }
 
   @override
   void dispose() {
     _filterScrollController.dispose();
     super.dispose();
+  }
+
+  void _deleteScan(int id) {
+    _storageService.deleteScan(id);
+    _refreshScans();
+  }
+
+  void _refreshScans() {
+    setState(() {
+      _scansFuture = _storageService.getAllScans();
+    });
+  }
+
+  void _viewScanDetail(SavedScan scan) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ScanDetailPage(scan: scan)),
+    );
+  }
+
+  List<SavedScan> _filterAndSortScans(List<SavedScan> scans) {
+    var filtered = scans;
+
+    if (_selectedFilter != 'All') {
+      filtered = scans
+          .where((scan) =>
+              scan.diseaseName == _selectedFilter ||
+              (scan.classification.contains('Early') && _selectedFilter.contains('Early')) ||
+              (scan.classification.contains('Severe') && _selectedFilter.contains('Severe')) ||
+              (scan.classification == 'Healthy' && _selectedFilter == 'Healthy'))
+          .toList();
+    }
+
+    if (_selectedSort == 'Accuracy') {
+      filtered.sort((a, b) => b.confidence.compareTo(a.confidence));
+    } else if (_selectedSort == 'Date') {
+      filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
+
+    return filtered;
   }
 
   @override
@@ -57,12 +107,45 @@ class _HistoryPageState extends State<HistoryPage> {
             },
           ),
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(30, 24, 30, 24),
-              itemCount: _historyScans.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 14),
-              itemBuilder: (context, index) {
-                return _HistoryScanTile(scan: _historyScans[index]);
+            child: FutureBuilder<List<SavedScan>>(
+              future: _scansFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+
+                final allScans = snapshot.data ?? [];
+                final filtered = _filterAndSortScans(allScans);
+
+                if (filtered.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No scans found',
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(30, 24, 30, 24),
+                  itemCount: filtered.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 14),
+                  itemBuilder: (context, index) {
+                    return _HistoryScanTile(
+                      scan: filtered[index],
+                      onTap: () => _viewScanDetail(filtered[index]),
+                      onDelete: () => _deleteScan(filtered[index].id!),
+                    );
+                  },
+                );
               },
             ),
           ),
@@ -273,142 +356,136 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _HistoryScanTile extends StatelessWidget {
-  const _HistoryScanTile({required this.scan});
+  const _HistoryScanTile({
+    required this.scan,
+    required this.onTap,
+    required this.onDelete,
+  });
 
-  final _HistoryScanItem scan;
+  final SavedScan scan;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppThemeColors.of(context);
+    final accentColor = Color(scan.accentColor);
 
-    return Container(
-      height: 76,
-      decoration: BoxDecoration(
-        color: colors.card,
-        border: Border.all(color: colors.cardBorder, width: 2),
-        borderRadius: BorderRadius.circular(14),
+    return Dismissible(
+      key: ValueKey(scan.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFF174A),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
       ),
-      padding: const EdgeInsets.fromLTRB(18, 14, 20, 14),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: scan.accentBackground,
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Icon(Icons.eco_outlined, color: scan.accent, size: 26),
+      onDismissed: (_) => onDelete(),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 76,
+          decoration: BoxDecoration(
+            color: colors.card,
+            border: Border.all(color: colors.cardBorder, width: 2),
+            borderRadius: BorderRadius.circular(14),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  scan.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0,
-                    height: 1,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  scan.subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: colors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0,
-                    height: 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          padding: const EdgeInsets.fromLTRB(18, 14, 20, 14),
+          child: Row(
             children: [
-              Text(
-                '95.2%',
-                style: TextStyle(
-                  color: colors.textPrimary,
-                  fontSize: 21,
-                  fontWeight: FontWeight.w900,
-                  height: 1,
-                  letterSpacing: 0,
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(Icons.eco_outlined, color: accentColor, size: 26),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      scan.diseaseName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0,
+                        height: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _formatTimeAgo(scan.createdAt),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0,
+                        height: 1,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 4),
-              Text(
-                'Accuracy',
-                style: TextStyle(
-                  color: colors.textPrimary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                  height: 1,
-                  letterSpacing: 0,
-                ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${(scan.confidence * 100).toStringAsFixed(1)}%',
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 21,
+                      fontWeight: FontWeight.w900,
+                      height: 1,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Accuracy',
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      height: 1,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
+
+  String _formatTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d ago';
+    } else {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    }
+  }
 }
-
-class _HistoryScanItem {
-  const _HistoryScanItem({
-    required this.title,
-    required this.subtitle,
-    required this.accent,
-    required this.accentBackground,
-  });
-
-  final String title;
-  final String subtitle;
-  final Color accent;
-  final Color accentBackground;
-}
-
-const _historyScans = [
-  _HistoryScanItem(
-    title: 'Healthy Leaf',
-    subtitle: 'Scan #24 - 2 hrs ago',
-    accent: Color(0xFF08B85F),
-    accentBackground: Color(0xFFA8F6D6),
-  ),
-  _HistoryScanItem(
-    title: 'Blight - Early',
-    subtitle: 'Scan #23 - 4 hrs ago',
-    accent: Color(0xFF9DAE00),
-    accentBackground: Color(0xFFF0FF9F),
-  ),
-  _HistoryScanItem(
-    title: 'Leaf Spot - Severe',
-    subtitle: 'Scan #20 - Yesterday',
-    accent: Color(0xFFD81E3A),
-    accentBackground: Color(0xFFFFB9C1),
-  ),
-  _HistoryScanItem(
-    title: 'Healthy Leaf',
-    subtitle: 'Scan #15 - 2 Days ago',
-    accent: Color(0xFF08B85F),
-    accentBackground: Color(0xFFA8F6D6),
-  ),
-  _HistoryScanItem(
-    title: 'Leaf Spot - Early',
-    subtitle: 'Scan #23 - 3 Days ago',
-    accent: Color(0xFF9DAE00),
-    accentBackground: Color(0xFFF0FF9F),
-  ),
-];

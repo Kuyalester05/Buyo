@@ -7,10 +7,25 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 
 import 'models/analysis_result_model.dart';
 
+/// Thrown when the image does not appear to be a Buyo leaf.
+class NotABuyoLeafException implements Exception {
+  const NotABuyoLeafException({required this.confidence});
+
+  /// The model's highest confidence score for any class (0.0–1.0).
+  final double confidence;
+
+  @override
+  String toString() => 'NotABuyoLeafException(confidence: $confidence)';
+}
+
 class LeafAnalysisService {
   static const _modelPath = 'assets/models/piper_betle/buyo_model.tflite';
   static const _labelsPath = 'assets/models/piper_betle/labels.txt';
   static const _inputSize = 224;
+
+  /// Minimum confidence required to accept an image as a Buyo leaf.
+  /// Images whose top prediction scores below this are rejected.
+  static const _confidenceThreshold = 0.65;
 
   Interpreter? _interpreter;
   List<String>? _labels;
@@ -46,6 +61,7 @@ class LeafAnalysisService {
       decodedImage,
       width: _inputSize,
       height: _inputSize,
+      interpolation: img.Interpolation.linear,
     );
 
     final input = _preprocessImage(resizedImage);
@@ -79,6 +95,7 @@ class LeafAnalysisService {
       decodedImage,
       width: _inputSize,
       height: _inputSize,
+      interpolation: img.Interpolation.linear,
     );
 
     final input = _preprocessImage(resizedImage);
@@ -86,49 +103,43 @@ class LeafAnalysisService {
 
     _interpreter!.run(input, output);
 
-    final outputValues = output[0];
-    final maxIndex = outputValues.indexOf(outputValues.reduce((a, b) => a > b ? a : b));
-    final confidence = outputValues[maxIndex];
-    final classification = _labels![maxIndex];
+    final outputValues2 = output[0];
+    final maxIndex2 = outputValues2.indexOf(outputValues2.reduce((a, b) => a > b ? a : b));
+    final confidence2 = outputValues2[maxIndex2];
+    final classification2 = _labels![maxIndex2];
 
     return AnalysisResult.fromClassification(
       'cropped-image',
-      classification,
-      confidence,
+      classification2,
+      confidence2,
     );
   }
 
   List<List<List<List<double>>>> _preprocessImage(img.Image image) {
+    // Ensure the image is in 8-bit format before processing.
+    // This eliminates the ColorFloat32 branch entirely, so all pixels
+    // are standard Color with channels in [0, 255] that we normalize to [0, 1].
+    final rgbImage = image.format != img.Format.uint8
+        ? image.convert(format: img.Format.uint8)
+        : image;
+
     final input = List.generate(
       1,
       (i) => List.generate(
         _inputSize,
-        (j) => List.generate(
+        (y) => List.generate(
           _inputSize,
-          (k) => List.generate(
+          (x) => List.generate(
             3,
-            (l) {
-              final pixel = image.getPixelSafe(k, j);
-              double value = 0;
-
-              if (pixel is img.ColorFloat32) {
-                value = switch (l) {
-                  0 => (pixel.r).toDouble(),
-                  1 => (pixel.g).toDouble(),
-                  2 => (pixel.b).toDouble(),
-                  _ => 0.0,
-                };
-              } else {
-                final color = pixel as img.Color;
-                value = switch (l) {
-                  0 => (color.r / 255.0).toDouble(),
-                  1 => (color.g / 255.0).toDouble(),
-                  2 => (color.b / 255.0).toDouble(),
-                  _ => 0.0,
-                };
-              }
-
-              return value;
+            (channel) {
+              final pixel = rgbImage.getPixelSafe(x, y);
+              // Normalize to [0.0, 1.0] — always divide by 255
+              return switch (channel) {
+                0 => (pixel.r / 255.0).clamp(0.0, 1.0),
+                1 => (pixel.g / 255.0).clamp(0.0, 1.0),
+                2 => (pixel.b / 255.0).clamp(0.0, 1.0),
+                _ => 0.0,
+              };
             },
           ),
         ),

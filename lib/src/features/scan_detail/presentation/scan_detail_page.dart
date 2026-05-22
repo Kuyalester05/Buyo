@@ -1,68 +1,63 @@
 import 'dart:typed_data';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import '../../../shared/services/models/analysis_result_model.dart';
 import '../../../shared/services/models/saved_scan_model.dart';
-import '../../../shared/services/scan_storage_service.dart';
 import '../../../shared/theme/app_theme_colors.dart';
 
-class AnalysisResultArguments {
-  AnalysisResultArguments({
-    required this.result,
-    required this.imageBytes,
-  });
+class ScanDetailPage extends StatelessWidget {
+  const ScanDetailPage({super.key, required this.scan});
 
-  final AnalysisResult result;
-  final Uint8List imageBytes;
-}
+  final SavedScan scan;
 
-class AnalysisResultPage extends StatefulWidget {
-  const AnalysisResultPage({super.key, required this.result, required this.imageBytes});
-
-  final AnalysisResult result;
-  final Uint8List imageBytes;
-
-  @override
-  State<AnalysisResultPage> createState() => _AnalysisResultPageState();
-}
-
-class _AnalysisResultPageState extends State<AnalysisResultPage> {
   @override
   Widget build(BuildContext context) {
     final colors = AppThemeColors.of(context);
-    final accentColor = Color(widget.result.accentColor);
+    final accentColor = Color(scan.accentColor);
+    final recommendations = scan.recommendations.split('|||');
 
     return Scaffold(
       backgroundColor: colors.pageBackground,
       body: SafeArea(
         child: Column(
           children: [
-            _ResultHeader(title: 'Analysis Results'),
+            _DetailHeader(title: 'Scan Details'),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   children: [
                     const SizedBox(height: 16),
-                    _ImagePreview(imageBytes: widget.imageBytes),
+                    _ImagePreview(imageBytes: scan.imageBytes),
                     const SizedBox(height: 24),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _ClassificationTitle(result: widget.result),
-                          const SizedBox(height: 12),
-                          _ConfidenceCard(result: widget.result, accentColor: accentColor),
-                          const SizedBox(height: 20),
-                          _DetailGrid(result: widget.result),
-                          const SizedBox(height: 24),
-                          _RecommendationsCard(result: widget.result, accentColor: accentColor),
-                          const SizedBox(height: 24),
-                          _SaveButton(
+                          _ClassificationTitle(
+                            diseaseName: scan.diseaseName,
+                            severityLevel: scan.severityLevel,
+                            confidence: scan.confidence,
                             accentColor: accentColor,
-                            result: widget.result,
-                            imageBytes: widget.imageBytes,
+                          ),
+                          const SizedBox(height: 12),
+                          _ConfidenceCard(
+                            confidence: scan.confidence,
+                            accentColor: accentColor,
+                          ),
+                          const SizedBox(height: 20),
+                          _DetailGrid(
+                            diseaseName: scan.diseaseName,
+                            severityLevel: scan.severityLevel,
+                            actionNeeded: scan.actionNeeded,
+                            accentColor: accentColor,
+                          ),
+                          const SizedBox(height: 24),
+                          _DateCard(
+                            createdAt: scan.createdAt,
+                          ),
+                          const SizedBox(height: 24),
+                          _RecommendationsCard(
+                            recommendations: recommendations,
+                            accentColor: accentColor,
                           ),
                           const SizedBox(height: 24),
                         ],
@@ -79,8 +74,8 @@ class _AnalysisResultPageState extends State<AnalysisResultPage> {
   }
 }
 
-class _ResultHeader extends StatelessWidget {
-  const _ResultHeader({required this.title});
+class _DetailHeader extends StatelessWidget {
+  const _DetailHeader({required this.title});
 
   final String title;
 
@@ -146,14 +141,21 @@ class _ImagePreview extends StatelessWidget {
 }
 
 class _ClassificationTitle extends StatelessWidget {
-  const _ClassificationTitle({required this.result});
+  const _ClassificationTitle({
+    required this.diseaseName,
+    required this.severityLevel,
+    required this.confidence,
+    required this.accentColor,
+  });
 
-  final AnalysisResult result;
+  final String diseaseName;
+  final String severityLevel;
+  final double confidence;
+  final Color accentColor;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppThemeColors.of(context);
-    final accentColor = Color(result.accentColor);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -162,7 +164,7 @@ class _ClassificationTitle extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                result.diseaseName,
+                diseaseName,
                 style: TextStyle(
                   color: colors.textPrimary,
                   fontSize: 22,
@@ -179,7 +181,7 @@ class _ClassificationTitle extends StatelessWidget {
                 border: Border.all(color: accentColor, width: 1.5),
               ),
               child: Text(
-                result.severityLevel,
+                severityLevel,
                 style: TextStyle(
                   color: accentColor,
                   fontSize: 12,
@@ -191,7 +193,7 @@ class _ClassificationTitle extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Classification completed · ${(result.confidence * 100).toStringAsFixed(1)}% confidence',
+          'Classification completed · ${(confidence * 100).toStringAsFixed(1)}% confidence',
           style: TextStyle(
             color: colors.textSecondary,
             fontSize: 12,
@@ -204,15 +206,18 @@ class _ClassificationTitle extends StatelessWidget {
 }
 
 class _ConfidenceCard extends StatelessWidget {
-  const _ConfidenceCard({required this.result, required this.accentColor});
+  const _ConfidenceCard({
+    required this.confidence,
+    required this.accentColor,
+  });
 
-  final AnalysisResult result;
+  final double confidence;
   final Color accentColor;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppThemeColors.of(context);
-    final percentage = (result.confidence * 100).toStringAsFixed(1);
+    final percentage = (confidence * 100).toStringAsFixed(1);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -250,7 +255,7 @@ class _ConfidenceCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: result.confidence,
+              value: confidence,
               minHeight: 8,
               backgroundColor: accentColor.withValues(alpha: 0.15),
               valueColor: AlwaysStoppedAnimation<Color>(accentColor),
@@ -263,9 +268,17 @@ class _ConfidenceCard extends StatelessWidget {
 }
 
 class _DetailGrid extends StatelessWidget {
-  const _DetailGrid({required this.result});
+  const _DetailGrid({
+    required this.diseaseName,
+    required this.severityLevel,
+    required this.actionNeeded,
+    required this.accentColor,
+  });
 
-  final AnalysisResult result;
+  final String diseaseName;
+  final String severityLevel;
+  final String actionNeeded;
+  final Color accentColor;
 
   @override
   Widget build(BuildContext context) {
@@ -276,7 +289,7 @@ class _DetailGrid extends StatelessWidget {
         Expanded(
           child: _DetailItem(
             label: 'Disease Type',
-            value: result.diseaseName,
+            value: diseaseName,
             colors: colors,
           ),
         ),
@@ -284,7 +297,7 @@ class _DetailGrid extends StatelessWidget {
         Expanded(
           child: _DetailItem(
             label: 'Severity Level',
-            value: result.severityLevel,
+            value: severityLevel,
             colors: colors,
             isHighlight: true,
           ),
@@ -293,9 +306,9 @@ class _DetailGrid extends StatelessWidget {
         Expanded(
           child: _DetailItem(
             label: 'Action Needed',
-            value: result.actionNeeded,
+            value: actionNeeded,
             colors: colors,
-            accentColor: Color(result.accentColor),
+            accentColor: accentColor,
           ),
         ),
       ],
@@ -354,10 +367,70 @@ class _DetailItem extends StatelessWidget {
   }
 }
 
-class _RecommendationsCard extends StatelessWidget {
-  const _RecommendationsCard({required this.result, required this.accentColor});
+class _DateCard extends StatelessWidget {
+  const _DateCard({required this.createdAt});
 
-  final AnalysisResult result;
+  final DateTime createdAt;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.card,
+        border: Border.all(color: colors.cardBorder, width: 2),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Scan Date',
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _formatDateTime(createdAt),
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final scanDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+
+    if (scanDate == today) {
+      return 'Today at ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } else if (scanDate == yesterday) {
+      return 'Yesterday at ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } else {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year} at ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    }
+  }
+}
+
+class _RecommendationsCard extends StatelessWidget {
+  const _RecommendationsCard({
+    required this.recommendations,
+    required this.accentColor,
+  });
+
+  final List<String> recommendations;
   final Color accentColor;
 
   @override
@@ -389,7 +462,7 @@ class _RecommendationsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          ...result.recommendations.map(
+          ...recommendations.map(
             (rec) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Row(
@@ -416,96 +489,6 @@ class _RecommendationsCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SaveButton extends StatefulWidget {
-  const _SaveButton({required this.accentColor, required this.result, required this.imageBytes});
-
-  final Color accentColor;
-  final AnalysisResult result;
-  final Uint8List imageBytes;
-
-  @override
-  State<_SaveButton> createState() => _SaveButtonState();
-}
-
-class _SaveButtonState extends State<_SaveButton> {
-  bool _isSaving = false;
-
-  Future<void> _saveResult() async {
-    setState(() => _isSaving = true);
-
-    try {
-      final appDocDir = await getApplicationDocumentsDirectory();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final imageName = 'scan_$timestamp.jpg';
-      final imagePath = '${appDocDir.path}/$imageName';
-
-      final imageFile = File(imagePath);
-      await imageFile.writeAsBytes(widget.imageBytes);
-
-      final storageService = ScanStorageService();
-      await storageService.saveScan(
-        imagePath,
-        widget.imageBytes,
-        widget.result.diseaseName,
-        widget.result.severityLevel,
-        widget.result.confidence,
-        widget.result.classification,
-        widget.result.recommendations,
-        widget.result.actionNeeded,
-        widget.result.accentColor,
-      );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Result saved successfully')),
-      );
-      Navigator.of(context).pop();
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving result: $e')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: FilledButton(
-        onPressed: _isSaving ? null : _saveResult,
-        style: FilledButton.styleFrom(
-          backgroundColor: widget.accentColor,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0,
-          ),
-        ),
-        child: _isSaving
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : const Text('Save Result'),
       ),
     );
   }
